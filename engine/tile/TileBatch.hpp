@@ -8,11 +8,13 @@ public:
 
 private:
     sf::VertexArray va_{sf::PrimitiveType::Triangles};
+    sf::Vector2f pixelOffset_{0.f, 0.f}; // chunk origin in pixels
 
     static sf::Color colorFor(TileID id);
     static void addQuad(sf::VertexArray& va, float x, float y, float s, sf::Color c);
 
     void draw(sf::RenderTarget& t, sf::RenderStates s) const override {
+        s.transform.translate(pixelOffset_);
         t.draw(va_, s);
     }
 };

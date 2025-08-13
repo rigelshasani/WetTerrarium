@@ -32,6 +32,18 @@ target_include_directories(engine_tile PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 # Link it to the app
 target_link_libraries(wet_terrarium PRIVATE engine_render engine_tile)
 
+# --- engine_world ---
+add_library(engine_world
+  engine/world/World.cpp
+  engine/world/World.hpp
+  engine/tile/Coords.hpp        # header-only but include for IDEs
+)
+target_link_libraries(engine_world PUBLIC engine_tile SFML::Graphics)
+target_include_directories(engine_world PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+# App links all
+target_link_libraries(wet_terrarium PRIVATE engine_render engine_tile engine_world)
+
 
 # rpath for vcpkg dylibs on macOS
 set(CMAKE_BUILD_WITH_INSTALL_RPATH YES)

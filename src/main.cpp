@@ -3,29 +3,20 @@
 #include <cstdio>
 
 #include "engine/render/Camera.hpp"
-#include "engine/tile/Chunk.hpp"
-#include "engine/tile/TileBatch.hpp"
-#include "engine/tile/TileTypes.hpp"
+#include "engine/world/World.hpp"
 
 int main() {
-    const sf::String title("WetTerrarium - tiles bootstrap");
+    const sf::String title("WetTerrarium - world bootstrap");
     sf::RenderWindow window(sf::VideoMode({1280u, 720u}), title);
     window.setFramerateLimit(144);
     window.setKeyRepeatEnabled(false);
 
-    // Camera
     Camera cam; 
     cam.init(window.getSize());
 
-    // World: one chunk
-    Chunk chunk(CHUNK_W, CHUNK_H);
-    chunk.generate();
+    World world(/*seed=*/0);
 
-    // Build mesh
-    TileBatch batch;
-    batch.build(chunk);
-
-    // HUD / FPS
+    // HUD
     sf::Font font; (void)font.openFromFile("/System/Library/Fonts/Supplemental/Arial Unicode.ttf");
     sf::Text fpsText(font, "", 16);
     fpsText.setFillColor(sf::Color::White);
@@ -46,6 +37,10 @@ int main() {
         const float dt = frameClock.restart().asSeconds();
         cam.update(dt);
 
+        // Ensure chunks around the camera’s current view exist (lazy-load)
+        world.ensureVisible(cam.view(), /*inflatePixels=*/TILE_SIZE * 8.f);
+
+        // FPS
         accum += dt; frames += 1;
         if (accum >= 0.25f) {
             const float fps = frames / accum; frames = 0; accum = 0.f;
@@ -54,15 +49,11 @@ int main() {
         }
 
         window.clear(sf::Color(8, 10, 16));
-
-        // World
         cam.applyTo(window);
-        window.draw(batch);
+        window.draw(world);
 
-        // HUD
         window.setView(window.getDefaultView());
         window.draw(fpsText);
-
         window.display();
     }
     return 0;

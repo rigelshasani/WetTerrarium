@@ -1,5 +1,6 @@
 #include "engine/tile/TileBatch.hpp"
 #include "engine/tile/TileTypes.hpp"
+#include "engine/tile/Coords.hpp"
 
 sf::Color TileBatch::colorFor(TileID id) {
     switch (id) {
@@ -20,11 +21,11 @@ static inline void pushVertex(sf::VertexArray& va, float x, float y, sf::Color c
 void TileBatch::addQuad(sf::VertexArray& va, float x, float y, float s, sf::Color c) {
     const float x0 = x,     y0 = y;
     const float x1 = x + s, y1 = y + s;
-    // tri 1: (x0,y0)-(x1,y0)-(x1,y1)
+    // tri 1
     pushVertex(va, x0, y0, c);
     pushVertex(va, x1, y0, c);
     pushVertex(va, x1, y1, c);
-    // tri 2: (x0,y0)-(x1,y1)-(x0,y1)
+    // tri 2
     pushVertex(va, x0, y0, c);
     pushVertex(va, x1, y1, c);
     pushVertex(va, x0, y1, c);
@@ -32,7 +33,12 @@ void TileBatch::addQuad(sf::VertexArray& va, float x, float y, float s, sf::Colo
 
 void TileBatch::build(const Chunk& chunk) {
     va_.clear();
-    va_.setPrimitiveType(sf::PrimitiveType::Triangles); // SFML 3
+    va_.setPrimitiveType(sf::PrimitiveType::Triangles);
+
+    // chunk origin in pixels
+    const auto orgTiles = chunkOriginTiles(chunk.coord());
+    pixelOffset_ = {orgTiles.x * static_cast<float>(TILE_SIZE),
+                    orgTiles.y * static_cast<float>(TILE_SIZE)};
 
     const unsigned W = chunk.width();
     const unsigned H = chunk.height();
