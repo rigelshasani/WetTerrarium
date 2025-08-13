@@ -3,6 +3,7 @@ out/
 *.DS_Store
 *.user
 *.log
-.vscode/
+.vscode/*
+!.vscode/settings.json
 .idea/
 compile_commands.json
