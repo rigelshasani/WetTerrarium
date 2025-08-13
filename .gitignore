@@ -1,0 +1,8 @@
+build/
+out/
+*.DS_Store
+*.user
+*.log
+.vscode/
+.idea/
+compile_commands.json
