@@ -19,6 +19,20 @@ target_include_directories(engine_render PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 add_executable(wet_terrarium src/main.cpp)
 target_link_libraries(wet_terrarium PRIVATE engine_render SFML::Audio)
 
+# --- engine_tile ---
+add_library(engine_tile
+  engine/tile/TileTypes.hpp
+  engine/tile/Chunk.hpp
+  engine/tile/TileBatch.cpp
+  engine/tile/TileBatch.hpp
+)
+target_link_libraries(engine_tile PUBLIC SFML::Graphics)
+target_include_directories(engine_tile PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+# Link it to the app
+target_link_libraries(wet_terrarium PRIVATE engine_render engine_tile)
+
+
 # rpath for vcpkg dylibs on macOS
 set(CMAKE_BUILD_WITH_INSTALL_RPATH YES)
 if(EXISTS "${CMAKE_BINARY_DIR}/vcpkg_installed/arm64-osx/lib")
