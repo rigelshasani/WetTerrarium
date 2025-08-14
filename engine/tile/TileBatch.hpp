@@ -6,11 +6,18 @@
 class TileBatch : public sf::Drawable {
 public:
     void build(const Chunk& chunk, const TileAtlas& atlas);
+    void updateRegion(const Chunk& chunk, const TileAtlas& atlas, 
+                     unsigned minX, unsigned minY, unsigned maxX, unsigned maxY);
+    
+    bool isDirty() const { return isDirty_; }
+    void markDirty() { isDirty_ = true; }
+    void markClean() { isDirty_ = false; }
 
 private:
     sf::VertexArray     va_{sf::PrimitiveType::Triangles};
     sf::Vector2f        pixelOffset_{0.f, 0.f};   // <- REQUIRED
     const sf::Texture*  tex_ = nullptr;           // <- REQUIRED
+    bool                isDirty_ = false;
 
     static void addQuad(sf::VertexArray& va,
                         float x, float y, float s,

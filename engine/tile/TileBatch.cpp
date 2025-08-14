@@ -50,4 +50,14 @@ void TileBatch::build(const Chunk& chunk, const TileAtlas& atlas) {
             addQuad(va_, x * S, y * S, S, atlas.uvFor(t));
         }
     }
+    isDirty_ = false;
+}
+
+void TileBatch::updateRegion(const Chunk& chunk, const TileAtlas& atlas,
+                           unsigned minX, unsigned minY, unsigned maxX, unsigned maxY) {
+    // For now, fall back to full rebuild for simplicity
+    // TODO: Implement true partial updates with vertex manipulation
+    if (isDirty_) {
+        build(chunk, atlas);
+    }
 }

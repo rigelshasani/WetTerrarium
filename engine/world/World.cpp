@@ -77,9 +77,13 @@ void World::ensureVisible(const sf::View& view, float inflatePixels, int keepMar
 }
 
 void World::draw(sf::RenderTarget& t, sf::RenderStates s) const {
-    // Draw all loaded chunks (caller should have ensured visibility)
-    for (const auto& kv : chunks_) {
-        t.draw(kv.second.batch, s);
+    // Draw all loaded chunks, rebuilding dirty batches on-demand
+    for (auto& kv : chunks_) {
+        Entry& entry = const_cast<Entry&>(kv.second); // Safe: only modifying batch state
+        if (entry.batch.isDirty()) {
+            entry.batch.build(entry.chunk, *atlas_);
+        }
+        t.draw(entry.batch, s);
     }
 }
 
@@ -114,7 +118,7 @@ bool World::setTileAtTile(int tx, int ty, TileID id) {
     Entry& ent = it->second;
     if (ent.chunk.get((unsigned)lx, (unsigned)ly) == id) return false;
     ent.chunk.set((unsigned)lx, (unsigned)ly, id);
-    ent.batch.build(ent.chunk, *atlas_); // rebuild this chunk's batch only
+    ent.batch.markDirty(); // mark for rebuild instead of immediate rebuild
     return true;
 }
 
