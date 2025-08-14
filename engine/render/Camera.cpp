@@ -1,12 +1,22 @@
 #include "engine/render/Camera.hpp"
 #include <algorithm>
+#include <cmath>
+#include <limits>
 
 void Camera::init(sf::Vector2u size) {
+    // Validate input size
+    if (size.x == 0 || size.y == 0) {
+        size = {800u, 600u}; // Fallback to reasonable default
+    }
     view_.setSize(sf::Vector2f(size));
     view_.setCenter(sf::Vector2f(size) * 0.5f);
 }
 
 void Camera::onResize(sf::Vector2u size) {
+    // Validate input size
+    if (size.x == 0 || size.y == 0) {
+        return; // Ignore invalid resize events
+    }
     const auto c = view_.getCenter();
     view_.setSize(sf::Vector2f(size));
     view_.setCenter(c);
@@ -44,13 +54,36 @@ void Camera::handleEvent(const sf::Event& ev) {
 }
 
 void Camera::update(float dt) {
+    // Validate delta time
+    if (!std::isfinite(dt) || dt < 0.f || dt > 1.f) {
+        return; // Ignore invalid time steps
+    }
+    
     const float pan = panSpeed_ * dt;
-    if (heldW_) view_.move({0.f, -pan});
-    if (heldS_) view_.move({0.f,  pan});
-    if (heldA_) view_.move({-pan, 0.f});
-    if (heldD_) view_.move({ pan, 0.f});
+    
+    // Current position for bounds checking
+    const sf::Vector2f currentCenter = view_.getCenter();
+    constexpr float maxWorldCoord = 1000000.f; // Reasonable world limit
+    
+    // Apply movement with bounds checking
+    sf::Vector2f newCenter = currentCenter;
+    if (heldW_) newCenter.y -= pan;
+    if (heldS_) newCenter.y += pan;
+    if (heldA_) newCenter.x -= pan;
+    if (heldD_) newCenter.x += pan;
+    
+    // Clamp to world bounds
+    newCenter.x = std::clamp(newCenter.x, -maxWorldCoord, maxWorldCoord);
+    newCenter.y = std::clamp(newCenter.y, -maxWorldCoord, maxWorldCoord);
+    view_.setCenter(newCenter);
 
-    // multiplicative zoom each frame while held
-    if (heldQ_) view_.zoom(std::max(0.01f, 1.f - zoomStep_));
-    if (heldE_) view_.zoom(1.f + zoomStep_);
+    // multiplicative zoom each frame while held with bounds
+    if (heldQ_) {
+        const float zoomFactor = std::max(0.001f, 1.f - zoomStep_);
+        view_.zoom(zoomFactor);
+    }
+    if (heldE_) {
+        const float zoomFactor = std::min(1000.f, 1.f + zoomStep_);
+        view_.zoom(zoomFactor);
+    }
 }

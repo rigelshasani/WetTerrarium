@@ -1,16 +1,32 @@
 #include "engine/world/World.hpp"
 #include <cassert>
 #include <algorithm>
+#include <cmath>
 
 void World::ensureVisible(const sf::View& view, float inflatePixels, int keepMarginChunks) {
     assert(atlas_ && "World requires a valid TileAtlas*");
+    
+    // Validate input parameters
+    if (inflatePixels < 0.f || !std::isfinite(inflatePixels)) {
+        inflatePixels = 0.f;
+    }
+    if (keepMarginChunks < 0) {
+        keepMarginChunks = 0;
+    }
+    
+    // Validate view parameters
+    const sf::Vector2f center = view.getCenter();
+    const sf::Vector2f size = view.getSize();
+    if (!std::isfinite(center.x) || !std::isfinite(center.y) || 
+        !std::isfinite(size.x) || !std::isfinite(size.y) ||
+        size.x <= 0.f || size.y <= 0.f) {
+        return; // Invalid view, skip processing
+    }
 
-    const sf::Vector2f c  = view.getCenter();
-    const sf::Vector2f sz = view.getSize();
-    const float left   = c.x - sz.x * 0.5f - inflatePixels;
-    const float right  = c.x + sz.x * 0.5f + inflatePixels;
-    const float top    = c.y - sz.y * 0.5f - inflatePixels;
-    const float bottom = c.y + sz.y * 0.5f + inflatePixels;
+    const float left   = center.x - size.x * 0.5f - inflatePixels;
+    const float right  = center.x + size.x * 0.5f + inflatePixels;
+    const float top    = center.y - size.y * 0.5f - inflatePixels;
+    const float bottom = center.y + size.y * 0.5f + inflatePixels;
 
     const ChunkCoord cmin = worldPixelsToChunk(left,  top);
     const ChunkCoord cmax = worldPixelsToChunk(right, bottom);
@@ -144,6 +160,16 @@ bool World::setTileAtTile(int tx, int ty, TileID id) {
 }
 
 bool World::setTileAtPixel(const sf::Vector2f& worldPx, TileID id) {
+    // Validate input coordinates
+    if (!std::isfinite(worldPx.x) || !std::isfinite(worldPx.y)) {
+        return false; // Ignore NaN/infinity coordinates
+    }
+    
+    // Validate tile ID
+    if (id > Tile::Stone) {
+        return false; // Unknown tile type
+    }
+    
     const int tx = static_cast<int>(std::floor(worldPx.x / static_cast<float>(TILE_SIZE)));
     const int ty = static_cast<int>(std::floor(worldPx.y / static_cast<float>(TILE_SIZE)));
     return setTileAtTile(tx, ty, id);
