@@ -11,8 +11,8 @@
 
 class World : public sf::Drawable {
 public:
-    explicit World(const TileAtlas* atlas, unsigned seed = 0)
-        : atlas_(atlas), seed_(seed) {
+    explicit World(const TileAtlas* atlas, unsigned seed = 0, size_t maxChunks = 1000)
+        : atlas_(atlas), seed_(seed), maxChunks_(maxChunks) {
         if (!atlas_) {
             throw std::invalid_argument("World requires a valid TileAtlas pointer");
         }
@@ -33,6 +33,7 @@ private:
     std::unordered_map<ChunkCoord, Entry, ChunkCoordHash> chunks_;
     const TileAtlas* atlas_{nullptr};
     unsigned seed_{0};
+    size_t maxChunks_{1000};
 
     void draw(sf::RenderTarget& t, sf::RenderStates s) const override;
 };

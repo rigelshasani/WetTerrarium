@@ -1,5 +1,6 @@
 #include "engine/world/World.hpp"
 #include <cassert>
+#include <algorithm>
 
 void World::ensureVisible(const sf::View& view, float inflatePixels, int keepMarginChunks) {
     assert(atlas_ && "World requires a valid TileAtlas*");
@@ -27,7 +28,7 @@ void World::ensureVisible(const sf::View& view, float inflatePixels, int keepMar
         }
     }
 
-    // Prune far chunks
+    // Prune far chunks and enforce memory limits
     const int xmin = cmin.x - keepMarginChunks;
     const int xmax = cmax.x + keepMarginChunks;
     const int ymin = cmin.y - keepMarginChunks;
@@ -35,11 +36,43 @@ void World::ensureVisible(const sf::View& view, float inflatePixels, int keepMar
 
     std::vector<ChunkCoord> toErase;
     toErase.reserve(chunks_.size());
+    
+    // First pass: mark chunks outside visible area
     for (const auto& kv : chunks_) {
         const ChunkCoord cc = kv.first;
         if (cc.x < xmin || cc.x > xmax || cc.y < ymin || cc.y > ymax)
             toErase.push_back(cc);
     }
+    
+    // Second pass: enforce hard memory limit if needed
+    if (chunks_.size() > maxChunks_) {
+        // Calculate distances from camera center and sort by distance
+        const ChunkCoord camChunk = worldPixelsToChunk(view.getCenter().x, view.getCenter().y);
+        
+        std::vector<std::pair<int, ChunkCoord>> distances;
+        for (const auto& kv : chunks_) {
+            const ChunkCoord cc = kv.first;
+            // Skip chunks already marked for removal
+            if (std::find(toErase.begin(), toErase.end(), cc) != toErase.end()) continue;
+            
+            const int dx = cc.x - camChunk.x;
+            const int dy = cc.y - camChunk.y;
+            const int distSq = dx * dx + dy * dy;
+            distances.emplace_back(distSq, cc);
+        }
+        
+        // Sort by distance (farthest first)
+        std::sort(distances.begin(), distances.end(), std::greater<std::pair<int, ChunkCoord>>());
+        
+        // Mark excess chunks for removal
+        const size_t chunksToKeep = maxChunks_ - toErase.size();
+        if (distances.size() > chunksToKeep) {
+            for (size_t i = chunksToKeep; i < distances.size(); ++i) {
+                toErase.push_back(distances[i].second);
+            }
+        }
+    }
+    
     for (const ChunkCoord& cc : toErase) chunks_.erase(cc);
 }
 
