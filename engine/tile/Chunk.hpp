@@ -16,8 +16,14 @@ public:
     unsigned height() const { return h_; }
     ChunkCoord coord() const { return coord_; }
 
-    TileID get(unsigned x, unsigned y) const { return data_[y*w_ + x]; }
-    void   set(unsigned x, unsigned y, TileID id) { data_[y*w_ + x] = id; }
+    TileID get(unsigned x, unsigned y) const { 
+        if (x >= w_ || y >= h_) return Tile::Air;
+        return data_[y*w_ + x]; 
+    }
+    void   set(unsigned x, unsigned y, TileID id) { 
+        if (x >= w_ || y >= h_) return;
+        data_[y*w_ + x] = id; 
+    }
 
     void generate(unsigned seed = 0) {
         const float mid  = h_ * 0.55f;
