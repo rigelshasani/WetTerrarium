@@ -56,6 +56,7 @@ bool World::setTileAtTile(int tx, int ty, TileID id) {
     // Find chunk containing (tx, ty)
     // Use existing helpers: tile origin of chunk and CHUNK dims
     auto div_floor = [](int a, int b) {
+        if (b == 0) return 0; // Handle division by zero
         int q = a / b, r = a % b;
         if ((r != 0) && ((r > 0) != (b > 0))) --q;
         return q;
