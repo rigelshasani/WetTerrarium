@@ -21,7 +21,7 @@ private:
 
     static void addQuad(sf::VertexArray& va,
                         float x, float y, float s,
-                        const sf::IntRect& uv);
+                        const sf::IntRect& uv, sf::Color color = sf::Color::White);
 
     void draw(sf::RenderTarget& t, sf::RenderStates s) const override {
         s.transform.translate(pixelOffset_);

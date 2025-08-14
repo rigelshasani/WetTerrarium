@@ -24,6 +24,8 @@ add_library(engine_tile
   engine/tile/TileAtlas.hpp
   engine/tile/TileBatch.hpp
   engine/tile/TileBatch.cpp
+  engine/tile/LightMap.hpp
+  engine/tile/LightMap.cpp
   engine/noise/ValueNoise.hpp 
 )
 target_link_libraries(engine_tile PUBLIC SFML::Graphics)

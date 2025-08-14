@@ -56,8 +56,8 @@ private:
         
         // Validate atlas dimensions
         const sf::Vector2u imgSize = img.getSize();
-        if (imgSize.y != size_ || imgSize.x != 6 * size_) {
-            return false; // Wrong dimensions for 6 tiles
+        if (imgSize.y != size_ || imgSize.x != 8 * size_) {
+            return false; // Wrong dimensions for 8 tiles
         }
         
         if (!tex_.loadFromImage(img)) {
@@ -70,7 +70,7 @@ private:
     }
     
     bool buildProcedural() {
-        const unsigned cols = 6; // Support 6 tile types
+        const unsigned cols = 8; // Support 8 tile types
         const sf::Vector2u imgSize{cols * size_, size_};
         sf::Image img({imgSize.x, imgSize.y}, sf::Color::Transparent);
 
@@ -92,12 +92,32 @@ private:
             }
         };
 
+        auto glowFill = [&](unsigned col, sf::Color base) {
+            // Special rendering for light sources with glow effect
+            for (unsigned y = 0; y < size_; ++y) {
+                for (unsigned x = 0; x < size_; ++x) {
+                    sf::Color c = base;
+                    // Add bright center
+                    const float dx = x - size_/2.f;
+                    const float dy = y - size_/2.f;
+                    const float dist = std::sqrt(dx*dx + dy*dy);
+                    const float glow = std::max(0.f, 1.f - dist / (size_/2.f));
+                    c.r = clamp8(int(c.r + glow * 100));
+                    c.g = clamp8(int(c.g + glow * 80));
+                    c.b = clamp8(int(c.b + glow * 40));
+                    img.setPixel(sf::Vector2u{col * size_ + x, y}, c);
+                }
+            }
+        };
+
         shadeFill(0, sf::Color(0, 0, 0, 0));        // Air (transparent)
         shadeFill(1, sf::Color(56, 170, 73));      // Grass (green)
         shadeFill(2, sf::Color(121, 85, 58));      // Dirt (brown)
         shadeFill(3, sf::Color(110, 110, 110));    // Stone (gray)
         shadeFill(4, sf::Color(139, 69, 19));      // Wood (dark brown)
         shadeFill(5, sf::Color(34, 139, 34));      // Leaves (forest green)
+        glowFill(6, sf::Color(255, 200, 100));     // Torch (bright orange)
+        glowFill(7, sf::Color(255, 255, 200));     // Lantern (bright yellow)
 
         if (!tex_.loadFromImage(img)) {
             return false;

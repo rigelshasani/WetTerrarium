@@ -6,11 +6,12 @@
 #include "engine/tile/TileTypes.hpp"
 #include "engine/tile/Coords.hpp"
 #include "engine/noise/ValueNoise.hpp"
+#include "engine/tile/LightMap.hpp"
 
 class Chunk {
 public:
     Chunk(ChunkCoord cc, unsigned w = CHUNK_W, unsigned h = CHUNK_H)
-        : coord_(cc), w_(w), h_(h), data_(w_*h_, Tile::Air) {}
+        : coord_(cc), w_(w), h_(h), data_(w_*h_, Tile::Air), lightMap_(w, h) {}
 
     unsigned width()  const { return w_; }
     unsigned height() const { return h_; }
@@ -23,6 +24,15 @@ public:
     void   set(unsigned x, unsigned y, TileID id) { 
         if (x >= w_ || y >= h_) return;
         data_[y*w_ + x] = id; 
+        lightingDirty_ = true; // mark lighting as needing recalculation
+    }
+
+    const LightMap& getLightMap() const { return lightMap_; }
+    void updateLighting(unsigned ambientLight = 0) {
+        if (lightingDirty_) {
+            lightMap_.calculateLighting(*this, ambientLight);
+            lightingDirty_ = false;
+        }
     }
 
     void generate(unsigned seed = 0) {
@@ -117,6 +127,9 @@ public:
                 set(lx, ly, Tile::Air);
             }
         }
+        
+        // Mark lighting as dirty after generation
+        lightingDirty_ = true;
     }
 
 private:
@@ -221,4 +234,6 @@ private:
     ChunkCoord coord_;
     unsigned w_, h_;
     std::vector<TileID> data_;
+    LightMap lightMap_;
+    bool lightingDirty_ = true;
 };

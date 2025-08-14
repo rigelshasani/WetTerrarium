@@ -39,6 +39,7 @@ void World::ensureVisible(const sf::View& view, float inflatePixels, int keepMar
 
             Entry e{Chunk(key)};
             e.chunk.generate(seed_);
+            e.chunk.updateLighting(currentAmbientLight_);
             e.batch.build(e.chunk, *atlas_);
             chunks_.emplace(key, std::move(e));
         }
@@ -120,6 +121,7 @@ void World::draw(sf::RenderTarget& t, sf::RenderStates s) const {
         
         Entry& entry = const_cast<Entry&>(kv.second); // Safe: only modifying batch state
         if (entry.batch.isDirty()) {
+            entry.chunk.updateLighting(currentAmbientLight_); // Ensure lighting is up to date
             entry.batch.build(entry.chunk, *atlas_);
         }
         t.draw(entry.batch, s);
@@ -149,6 +151,7 @@ bool World::setTileAtTile(int tx, int ty, TileID id) {
     if (it == chunks_.end()) {
         Entry e{Chunk(cc)};
         e.chunk.generate(seed_);
+        e.chunk.updateLighting(currentAmbientLight_);
         e.batch.build(e.chunk, *atlas_);
         it = chunks_.emplace(cc, std::move(e)).first;
     }
@@ -157,6 +160,7 @@ bool World::setTileAtTile(int tx, int ty, TileID id) {
     Entry& ent = it->second;
     if (ent.chunk.get((unsigned)lx, (unsigned)ly) == id) return false;
     ent.chunk.set((unsigned)lx, (unsigned)ly, id);
+    ent.chunk.updateLighting(currentAmbientLight_); // Recalculate lighting after tile change
     ent.batch.markDirty(); // mark for rebuild instead of immediate rebuild
     return true;
 }
@@ -168,11 +172,24 @@ bool World::setTileAtPixel(const sf::Vector2f& worldPx, TileID id) {
     }
     
     // Validate tile ID
-    if (id > Tile::Leaves) {
+    if (id > Tile::Lantern) {
         return false; // Unknown tile type
     }
     
     const int tx = static_cast<int>(std::floor(worldPx.x / static_cast<float>(TILE_SIZE)));
     const int ty = static_cast<int>(std::floor(worldPx.y / static_cast<float>(TILE_SIZE)));
     return setTileAtTile(tx, ty, id);
+}
+
+void World::updateAmbientLight(unsigned ambientLevel) {
+    if (ambientLevel == currentAmbientLight_) return; // No change needed
+    
+    currentAmbientLight_ = ambientLevel;
+    
+    // Force immediate lighting recalculation for ALL chunks
+    for (auto& kv : chunks_) {
+        Entry& entry = kv.second;
+        entry.chunk.updateLighting(currentAmbientLight_);
+        entry.batch.markDirty(); // Mark batch for rebuild with new lighting
+    }
 }

@@ -26,6 +26,9 @@ public:
     // NEW: edit helpers
     bool setTileAtTile(int tx, int ty, TileID id);
     bool setTileAtPixel(const sf::Vector2f& worldPx, TileID id);
+    
+    // Lighting update
+    void updateAmbientLight(unsigned ambientLevel);
 
 private:
     struct Entry { Chunk chunk; TileBatch batch; };
@@ -34,6 +37,7 @@ private:
     const TileAtlas* atlas_{nullptr};
     unsigned seed_{0};
     size_t maxChunks_{1000};
+    unsigned currentAmbientLight_{12}; // Current ambient light level
 
     void draw(sf::RenderTarget& t, sf::RenderStates s) const override;
 };
