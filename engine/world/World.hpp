@@ -1,6 +1,7 @@
 #pragma once
 #include <unordered_map>
 #include <vector>
+#include <stdexcept>
 #include <SFML/Graphics.hpp>
 #include "engine/tile/Coords.hpp"
 #include "engine/tile/Chunk.hpp"
@@ -11,7 +12,11 @@
 class World : public sf::Drawable {
 public:
     explicit World(const TileAtlas* atlas, unsigned seed = 0)
-        : atlas_(atlas), seed_(seed) {}
+        : atlas_(atlas), seed_(seed) {
+        if (!atlas_) {
+            throw std::invalid_argument("World requires a valid TileAtlas pointer");
+        }
+    }
 
     // keepMarginChunks: extra chunk margin to keep around visible area
     void ensureVisible(const sf::View& view,
