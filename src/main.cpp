@@ -42,9 +42,8 @@ int main() {
         }
     }
     
-    sf::Text fpsText;
+    sf::Text fpsText(font, "", 16); // SFML 3 requires font parameter
     if (fontLoaded) {
-        fpsText = sf::Text(font, "", 16);
         fpsText.setFillColor(sf::Color::White);
         fpsText.setPosition({8.f, 8.f});
     }

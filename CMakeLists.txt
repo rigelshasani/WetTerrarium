@@ -47,6 +47,14 @@ target_link_libraries(wet_terrarium PRIVATE
   engine_world
 )
 
+# Copy assets to build directory
+add_custom_command(TARGET wet_terrarium POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${CMAKE_SOURCE_DIR}/assets
+    $<TARGET_FILE_DIR:wet_terrarium>/assets
+  COMMENT "Copying assets to build directory"
+)
+
 # macOS: allow runtime linking to vcpkg dylibs
 set(CMAKE_BUILD_WITH_INSTALL_RPATH YES)
 if(EXISTS "${CMAKE_BINARY_DIR}/vcpkg_installed/arm64-osx/lib")

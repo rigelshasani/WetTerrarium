@@ -78,7 +78,9 @@ void World::ensureVisible(const sf::View& view, float inflatePixels, int keepMar
         }
         
         // Sort by distance (farthest first)
-        std::sort(distances.begin(), distances.end(), std::greater<std::pair<int, ChunkCoord>>());
+        std::sort(distances.begin(), distances.end(), [](const auto& a, const auto& b) {
+            return a.first > b.first; // Compare only the distance (first element)
+        });
         
         // Mark excess chunks for removal
         const size_t chunksToKeep = maxChunks_ - toErase.size();
@@ -166,7 +168,7 @@ bool World::setTileAtPixel(const sf::Vector2f& worldPx, TileID id) {
     }
     
     // Validate tile ID
-    if (id > Tile::Stone) {
+    if (id > Tile::Leaves) {
         return false; // Unknown tile type
     }
     

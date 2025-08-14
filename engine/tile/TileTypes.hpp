@@ -4,7 +4,7 @@
 using TileID = std::uint16_t;
 
 namespace Tile {
-    enum : TileID { Air = 0, Grass = 1, Dirt = 2, Stone = 3 };
+    enum : TileID { Air = 0, Grass = 1, Dirt = 2, Stone = 3, Wood = 4, Leaves = 5 };
 }
 
 inline constexpr unsigned TILE_SIZE = 16; // px

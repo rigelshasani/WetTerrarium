@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <stdexcept>
+#include <filesystem>
 #include "engine/tile/TileTypes.hpp"
 
 class TileAtlas {
@@ -34,9 +35,44 @@ private:
     }
 
     bool build() {
-        const unsigned cols = 4;
+        // Try to load PNG atlas first
+        if (loadFromPNG("assets/tiles.png")) {
+            return true;
+        }
+        
+        // Fallback to procedural generation
+        return buildProcedural();
+    }
+    
+    bool loadFromPNG(const std::filesystem::path& atlasPath) {
+        if (!std::filesystem::exists(atlasPath)) {
+            return false;
+        }
+        
+        sf::Image img;
+        if (!img.loadFromFile(atlasPath)) {
+            return false;
+        }
+        
+        // Validate atlas dimensions
+        const sf::Vector2u imgSize = img.getSize();
+        if (imgSize.y != size_ || imgSize.x != 6 * size_) {
+            return false; // Wrong dimensions for 6 tiles
+        }
+        
+        if (!tex_.loadFromImage(img)) {
+            return false;
+        }
+        
+        tex_.setRepeated(false);
+        tex_.setSmooth(false);
+        return true;
+    }
+    
+    bool buildProcedural() {
+        const unsigned cols = 6; // Support 6 tile types
         const sf::Vector2u imgSize{cols * size_, size_};
-        sf::Image img(imgSize, sf::Color::Transparent);
+        sf::Image img({imgSize.x, imgSize.y}, sf::Color::Transparent);
 
         auto shadeFill = [&](unsigned col, sf::Color base) {
             for (unsigned y = 0; y < size_; ++y) {
@@ -56,10 +92,12 @@ private:
             }
         };
 
-        shadeFill(0, sf::Color(0, 0, 0, 0));
-        shadeFill(1, sf::Color(56, 170, 73));
-        shadeFill(2, sf::Color(121, 85, 58));
-        shadeFill(3, sf::Color(110, 110, 110));
+        shadeFill(0, sf::Color(0, 0, 0, 0));        // Air (transparent)
+        shadeFill(1, sf::Color(56, 170, 73));      // Grass (green)
+        shadeFill(2, sf::Color(121, 85, 58));      // Dirt (brown)
+        shadeFill(3, sf::Color(110, 110, 110));    // Stone (gray)
+        shadeFill(4, sf::Color(139, 69, 19));      // Wood (dark brown)
+        shadeFill(5, sf::Color(34, 139, 34));      // Leaves (forest green)
 
         if (!tex_.loadFromImage(img)) {
             return false;
