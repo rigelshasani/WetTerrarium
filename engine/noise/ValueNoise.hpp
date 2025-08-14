@@ -15,6 +15,10 @@ static inline float hash01(std::uint64_t k) {
     return (float)((smix(k) >> 40) & 0xFFFFFFull) / 16777216.0f;
 }
 
+static inline std::uint64_t hash2to1(std::uint64_t x, std::uint64_t y) {
+    return smix(x * 0x9E3779B185EBCA87ull ^ y * 0xC2B2AE3D27D4EB4Full);
+}
+
 static inline std::uint64_t pack2i(std::int64_t x, std::int64_t y, std::uint64_t seed) {
     return (std::uint64_t)(x) * 0x9E3779B185EBCA87ull
          ^ (std::uint64_t)(y) * 0xC2B2AE3D27D4EB4Full

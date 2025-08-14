@@ -63,6 +63,7 @@ int main() {
                 // Map screen->world using the camera view
                 const sf::Vector2f worldPos =
                     window.mapPixelToCoords({mb->position.x, mb->position.y}, cam.view());
+                
                 if (mb->button == sf::Mouse::Button::Left) {
                     world.setTileAtPixel(worldPos, Tile::Air);   // dig
                 } else if (mb->button == sf::Mouse::Button::Right) {
