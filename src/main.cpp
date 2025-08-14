@@ -44,7 +44,8 @@ int main() {
         cam.update(dt);
 
         // Lazy-load visible chunks around the camera
-        world.ensureVisible(cam.view(), /*inflatePixels=*/TILE_SIZE * 8.f);
+        world.ensureVisible(cam.view(), /*inflatePixels=*/TILE_SIZE * 8.f, /*keepMarginChunks=*/2);
+
 
         // FPS
         accum += dt; frames += 1;

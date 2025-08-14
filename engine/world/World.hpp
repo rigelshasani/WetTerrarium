@@ -1,5 +1,6 @@
 #pragma once
 #include <unordered_map>
+#include <vector>
 #include <SFML/Graphics.hpp>
 #include "engine/tile/Coords.hpp"
 #include "engine/tile/Chunk.hpp"
@@ -12,14 +13,13 @@ public:
     explicit World(const TileAtlas* atlas, unsigned seed = 0)
         : atlas_(atlas), seed_(seed) {}
 
-    // Ensure chunks overlapping the view (plus a padding) exist
-    void ensureVisible(const sf::View& view, float inflatePixels = 256.f);
+    // keepMarginChunks: extra chunk margin to keep around visible area
+    void ensureVisible(const sf::View& view,
+                       float inflatePixels = 256.f,
+                       int keepMarginChunks = 2);
 
 private:
-    struct Entry {
-        Chunk     chunk;
-        TileBatch batch;
-    };
+    struct Entry { Chunk chunk; TileBatch batch; };
 
     std::unordered_map<ChunkCoord, Entry, ChunkCoordHash> chunks_;
     const TileAtlas* atlas_{nullptr};
