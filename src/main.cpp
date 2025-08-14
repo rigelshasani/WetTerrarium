@@ -1,6 +1,8 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/Window.hpp>
 #include <cstdio>
+#include <vector>
+#include <string>
 
 #include "engine/render/Camera.hpp"
 #include "engine/world/World.hpp"
@@ -22,10 +24,30 @@ int main() {
 
     // HUD
     sf::Font font;
-    (void)font.openFromFile("/System/Library/Fonts/Supplemental/Arial Unicode.ttf");
-    sf::Text fpsText(font, "", 16);
-    fpsText.setFillColor(sf::Color::White);
-    fpsText.setPosition({8.f, 8.f});
+    bool fontLoaded = false;
+    
+    // Try multiple font paths for cross-platform compatibility
+    const std::vector<std::string> fontPaths = {
+        "/System/Library/Fonts/Supplemental/Arial Unicode.ttf", // macOS
+        "/System/Library/Fonts/Arial.ttf",                      // macOS fallback
+        "C:\\Windows\\Fonts\\arial.ttf",                        // Windows
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",     // Linux
+        "/usr/share/fonts/TTF/arial.ttf",                      // Linux alternate
+    };
+    
+    for (const auto& path : fontPaths) {
+        if (font.openFromFile(path)) {
+            fontLoaded = true;
+            break;
+        }
+    }
+    
+    sf::Text fpsText;
+    if (fontLoaded) {
+        fpsText = sf::Text(font, "", 16);
+        fpsText.setFillColor(sf::Color::White);
+        fpsText.setPosition({8.f, 8.f});
+    }
 
     sf::Clock frameClock;
     float accum = 0.f; int frames = 0;
@@ -61,7 +83,7 @@ int main() {
 
         // FPS
         accum += dt; frames += 1;
-        if (accum >= 0.25f) {
+        if (accum >= 0.25f && fontLoaded) {
             const float fps = frames / accum; frames = 0; accum = 0.f;
             char buf[64]; std::snprintf(buf, sizeof(buf), "FPS: %.1f", fps);
             fpsText.setString(buf);
@@ -72,7 +94,9 @@ int main() {
         window.draw(world);
 
         window.setView(window.getDefaultView());
-        window.draw(fpsText);
+        if (fontLoaded) {
+            window.draw(fpsText);
+        }
         window.display();
     }
     return 0;
