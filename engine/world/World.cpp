@@ -77,8 +77,29 @@ void World::ensureVisible(const sf::View& view, float inflatePixels, int keepMar
 }
 
 void World::draw(sf::RenderTarget& t, sf::RenderStates s) const {
-    // Draw all loaded chunks, rebuilding dirty batches on-demand
+    // Get view bounds for frustum culling
+    const sf::View view = t.getView();
+    const sf::Vector2f center = view.getCenter();
+    const sf::Vector2f size = view.getSize();
+    const float left = center.x - size.x * 0.5f;
+    const float right = center.x + size.x * 0.5f;
+    const float top = center.y - size.y * 0.5f;
+    const float bottom = center.y + size.y * 0.5f;
+    
+    // Convert to chunk bounds
+    const ChunkCoord minChunk = worldPixelsToChunk(left, top);
+    const ChunkCoord maxChunk = worldPixelsToChunk(right, bottom);
+    
+    // Draw only visible chunks, rebuilding dirty batches on-demand
     for (auto& kv : chunks_) {
+        const ChunkCoord cc = kv.first;
+        
+        // Frustum culling: skip chunks outside view
+        if (cc.x < minChunk.x - 1 || cc.x > maxChunk.x + 1 ||
+            cc.y < minChunk.y - 1 || cc.y > maxChunk.y + 1) {
+            continue;
+        }
+        
         Entry& entry = const_cast<Entry&>(kv.second); // Safe: only modifying batch state
         if (entry.batch.isDirty()) {
             entry.batch.build(entry.chunk, *atlas_);
