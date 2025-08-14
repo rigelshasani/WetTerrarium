@@ -37,8 +37,20 @@ int main() {
             } else if (const auto* key = ev->getIf<sf::Event::KeyPressed>()) {
                 if (key->scancode == sf::Keyboard::Scan::Escape) window.close();
             }
+            // NEW: dig/place
+            if (const auto* mb = ev->getIf<sf::Event::MouseButtonPressed>()) {
+                // Map screen->world using the camera view
+                const sf::Vector2f worldPos =
+                    window.mapPixelToCoords({mb->position.x, mb->position.y}, cam.view());
+                if (mb->button == sf::Mouse::Button::Left) {
+                    world.setTileAtPixel(worldPos, Tile::Air);   // dig
+                } else if (mb->button == sf::Mouse::Button::Right) {
+                    world.setTileAtPixel(worldPos, Tile::Stone); // place
+                }
+            }
             cam.handleEvent(*ev);
         }
+
 
         const float dt = frameClock.restart().asSeconds();
         cam.update(dt);

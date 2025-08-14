@@ -18,6 +18,10 @@ public:
                        float inflatePixels = 256.f,
                        int keepMarginChunks = 2);
 
+    // NEW: edit helpers
+    bool setTileAtTile(int tx, int ty, TileID id);
+    bool setTileAtPixel(const sf::Vector2f& worldPx, TileID id);
+
 private:
     struct Entry { Chunk chunk; TileBatch batch; };
 
