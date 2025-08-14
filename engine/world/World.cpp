@@ -177,12 +177,12 @@ void World::drawUndergroundBackgroundTiles(sf::RenderTarget& t, const Chunk& chu
             const std::uint8_t b = static_cast<std::uint8_t>(15 + depthFactor * 10);
             const std::uint8_t a = 255; // Fully opaque underground background
             
-            // Draw background rectangle for this specific air tile
-            const float tileWorldX = static_cast<float>(orgTiles.x + static_cast<int>(x)) * tilePixelSize;
-            const float tileWorldY = static_cast<float>(orgTiles.y + static_cast<int>(y)) * tilePixelSize;
+            // Draw background rectangle with integer pixel alignment to prevent bleeding
+            const int pixelX = (orgTiles.x + static_cast<int>(x)) * static_cast<int>(TILE_SIZE);
+            const int pixelY = (orgTiles.y + static_cast<int>(y)) * static_cast<int>(TILE_SIZE);
             
-            sf::RectangleShape tileBackground(sf::Vector2f(tilePixelSize, tilePixelSize));
-            tileBackground.setPosition(sf::Vector2f(tileWorldX, tileWorldY));
+            sf::RectangleShape tileBackground(sf::Vector2f(static_cast<float>(TILE_SIZE), static_cast<float>(TILE_SIZE)));
+            tileBackground.setPosition(sf::Vector2f(static_cast<float>(pixelX), static_cast<float>(pixelY)));
             tileBackground.setFillColor(sf::Color(r, g, b, a));
             
             t.draw(tileBackground);

@@ -10,22 +10,22 @@ void LightMap::calculateLighting(const Chunk& chunk, unsigned ambientLight) {
             TileID tile = chunk.get(x, y);
             
             // Underground gets reasonable ambient lighting regardless of surface
-            // Surface gets full ambient, underground gets reduced but decent lighting
+            // Surface gets full ambient, underground gets completely uniform lighting
             if (y < 8) {
                 // Surface and near-surface - can be affected by shadows
                 setLight(x, y, std::max(2u, ambientLight / 4));
             } else {
-                // Underground - gets its own ambient lighting independent of surface
-                setLight(x, y, std::max(4u, ambientLight / 2));
+                // Underground - gets completely uniform lighting (no variation)
+                setLight(x, y, 7u); // Fixed uniform lighting level for all underground areas
             }
         }
     }
     
-    // Second pass: Add sunlight from top (only affects surface layers)
+    // Second pass: Add sunlight from top (only affects surface layers - stop at depth 8)
     if (ambientLight > 0) {
         for (unsigned x = 0; x < w_; ++x) {
             unsigned currentLight = ambientLight;
-            for (unsigned y = 0; y < h_ && y < 12 && currentLight > 0; ++y) { // Limit sunlight depth
+            for (unsigned y = 0; y < h_ && y < 8 && currentLight > 0; ++y) { // Stop sunlight at underground boundary
                 TileID tile = chunk.get(x, y);
                 
                 if (tile == Tile::Air) {
@@ -35,9 +35,9 @@ void LightMap::calculateLighting(const Chunk& chunk, unsigned ambientLight) {
                     setLight(x, y, std::max(getLight(x, y), currentLight));
                     currentLight = std::max(currentLight / 2, currentLight - 2);
                 } else if (blocksLight(tile)) {
-                    // Surface blocks get good lighting
+                    // Surface blocks get good lighting but completely block sunlight from going deeper
                     setLight(x, y, std::max(getLight(x, y), currentLight));
-                    currentLight = std::max(0u, currentLight - 4); // Solid blocks reduce light more
+                    currentLight = 0; // Solid blocks completely stop sunlight penetration
                 } else {
                     setLight(x, y, std::max(getLight(x, y), currentLight));
                 }

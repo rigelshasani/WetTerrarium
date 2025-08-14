@@ -11,9 +11,11 @@ static inline void pushVertex(sf::VertexArray& va, float x, float y, float u, fl
 }
 
 void TileBatch::addQuad(sf::VertexArray& va, float x, float y, float s, const sf::IntRect& uv, sf::Color color) {
+    // Use exact tile boundaries to prevent background bleeding
     const float x0 = x,     y0 = y;
     const float x1 = x + s, y1 = y + s;
 
+    // Use exact texture coordinates to avoid bleeding between atlas tiles
     const float u0 = static_cast<float>(uv.position.x);
     const float v0 = static_cast<float>(uv.position.y);
     const float u1 = static_cast<float>(uv.position.x + uv.size.x);
@@ -52,25 +54,39 @@ void TileBatch::build(const Chunk& chunk, const TileAtlas& atlas) {
             const LightMap& lightMap = chunk.getLightMap();
             unsigned lightLevel = lightMap.getLight(x, y);
             
+            // For underground stone tiles, use simplified lighting to avoid banding
+            const auto orgTiles = chunkOriginTiles(chunk.coord());
+            const int worldY = orgTiles.y + static_cast<int>(y);
             
-            // Convert light level (0-15) to color multiplier (0.0-1.0)
-            float lightFactor = static_cast<float>(lightLevel) / static_cast<float>(MAX_LIGHT_LEVEL);
-            
-            // During full daylight (level 12+), tiles should appear at full brightness
-            // During darkness (level 2), tiles should be very dim but visible
-            if (lightLevel >= 10) {
-                // Full daylight - show natural tile colors
-                lightFactor = 1.0f;
-            } else if (lightLevel >= 6) {
-                // Dawn/dusk - gradually brighten
-                lightFactor = 0.7f + 0.3f * (lightLevel - 6) / 4.0f; // 0.7 to 1.0
+            sf::Color tileColor;
+            if (t == Tile::Stone && worldY >= 8) {
+                // Underground stone: use simplified lighting that reduces variation
+                float lightFactor;
+                if (lightLevel >= 10) {
+                    lightFactor = 0.7f; // Bright areas (near torches) but not full bright
+                } else if (lightLevel >= 8) {
+                    lightFactor = 0.6f; // Medium bright
+                } else {
+                    lightFactor = 0.5f; // Base underground brightness
+                }
+                
+                std::uint8_t brightness = static_cast<std::uint8_t>(255 * lightFactor);
+                tileColor = sf::Color{brightness, brightness, brightness, 255};
             } else {
-                // Night/dark - dim but visible
-                lightFactor = 0.2f + 0.5f * lightLevel / 6.0f; // 0.2 to 0.7
+                // Normal lighting calculation for surface tiles and non-stone
+                float lightFactor = static_cast<float>(lightLevel) / static_cast<float>(MAX_LIGHT_LEVEL);
+                
+                if (lightLevel >= 10) {
+                    lightFactor = 1.0f;
+                } else if (lightLevel >= 6) {
+                    lightFactor = 0.7f + 0.3f * (lightLevel - 6) / 4.0f;
+                } else {
+                    lightFactor = 0.2f + 0.5f * lightLevel / 6.0f;
+                }
+                
+                std::uint8_t brightness = static_cast<std::uint8_t>(255 * lightFactor);
+                tileColor = sf::Color{brightness, brightness, brightness, 255};
             }
-            
-            std::uint8_t brightness = static_cast<std::uint8_t>(255 * lightFactor);
-            sf::Color tileColor{brightness, brightness, brightness, 255};
             
             addQuad(va_, x * S, y * S, S, atlas.uvFor(t), tileColor);
         }
