@@ -40,4 +40,5 @@ private:
     unsigned currentAmbientLight_{12}; // Current ambient light level
 
     void draw(sf::RenderTarget& t, sf::RenderStates s) const override;
+    void drawUndergroundBackgroundTiles(sf::RenderTarget& t, const Chunk& chunk) const;
 };

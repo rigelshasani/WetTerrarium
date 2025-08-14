@@ -109,7 +109,20 @@ void World::draw(sf::RenderTarget& t, sf::RenderStates s) const {
     const ChunkCoord minChunk = worldPixelsToChunk(left, top);
     const ChunkCoord maxChunk = worldPixelsToChunk(right, bottom);
     
-    // Draw only visible chunks, rebuilding dirty batches on-demand
+    // First pass: Draw underground backgrounds for individual air tiles
+    for (auto& kv : chunks_) {
+        const ChunkCoord cc = kv.first;
+        
+        // Frustum culling: skip chunks outside view
+        if (cc.x < minChunk.x - 1 || cc.x > maxChunk.x + 1 ||
+            cc.y < minChunk.y - 1 || cc.y > maxChunk.y + 1) {
+            continue;
+        }
+        
+        drawUndergroundBackgroundTiles(t, kv.second.chunk);
+    }
+    
+    // Second pass: Draw tiles
     for (auto& kv : chunks_) {
         const ChunkCoord cc = kv.first;
         
@@ -125,6 +138,55 @@ void World::draw(sf::RenderTarget& t, sf::RenderStates s) const {
             entry.batch.build(entry.chunk, *atlas_);
         }
         t.draw(entry.batch, s);
+    }
+}
+
+void World::drawUndergroundBackgroundTiles(sf::RenderTarget& t, const Chunk& chunk) const {
+    const auto orgTiles = chunkOriginTiles(chunk.coord());
+    const float tilePixelSize = static_cast<float>(TILE_SIZE);
+    
+    // Terrain generation parameters (same as in Chunk::generate)
+    const float mid = CHUNK_H * 0.55f;
+    const float amp = CHUNK_H * 0.18f;
+    const float wavL = 180.f;
+    const float freq = 6.28318530718f / wavL;
+    
+    for (unsigned y = 0; y < chunk.height(); ++y) {
+        for (unsigned x = 0; x < chunk.width(); ++x) {
+            TileID tile = chunk.get(x, y);
+            
+            // Only draw background behind air tiles
+            if (tile != Tile::Air) continue;
+            
+            const int worldX = orgTiles.x + static_cast<int>(x);
+            const int worldY = orgTiles.y + static_cast<int>(y);
+            
+            // Calculate terrain surface for this specific world X coordinate
+            const float surfaceY = mid + amp * std::sin(freq * static_cast<float>(worldX));
+            const int surfaceTileY = static_cast<int>(std::floor(surfaceY));
+            
+            // Only draw background if this air tile is below the surface (underground)
+            if (worldY <= surfaceTileY) continue;
+            
+            // Calculate depth-based background color
+            const int depthBelowSurface = worldY - surfaceTileY;
+            const float depthFactor = std::min(0.8f, static_cast<float>(depthBelowSurface) / 60.0f);
+            
+            const std::uint8_t r = static_cast<std::uint8_t>(25 + depthFactor * 20);
+            const std::uint8_t g = static_cast<std::uint8_t>(20 + depthFactor * 15);
+            const std::uint8_t b = static_cast<std::uint8_t>(15 + depthFactor * 10);
+            const std::uint8_t a = 255; // Fully opaque underground background
+            
+            // Draw background rectangle for this specific air tile
+            const float tileWorldX = static_cast<float>(orgTiles.x + static_cast<int>(x)) * tilePixelSize;
+            const float tileWorldY = static_cast<float>(orgTiles.y + static_cast<int>(y)) * tilePixelSize;
+            
+            sf::RectangleShape tileBackground(sf::Vector2f(tilePixelSize, tilePixelSize));
+            tileBackground.setPosition(sf::Vector2f(tileWorldX, tileWorldY));
+            tileBackground.setFillColor(sf::Color(r, g, b, a));
+            
+            t.draw(tileBackground);
+        }
     }
 }
 
