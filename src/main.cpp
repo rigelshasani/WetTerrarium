@@ -4,20 +4,25 @@
 
 #include "engine/render/Camera.hpp"
 #include "engine/world/World.hpp"
+#include "engine/tile/TileAtlas.hpp"
 
 int main() {
-    const sf::String title("WetTerrarium - world bootstrap");
+    const sf::String title("WetTerrarium - textured world");
     sf::RenderWindow window(sf::VideoMode({1280u, 720u}), title);
     window.setFramerateLimit(144);
     window.setKeyRepeatEnabled(false);
 
-    Camera cam; 
+    // Camera
+    Camera cam;
     cam.init(window.getSize());
 
-    World world(/*seed=*/0);
+    // Tiles/World
+    TileAtlas atlas(TILE_SIZE);
+    World world(&atlas, /*seed=*/0);
 
     // HUD
-    sf::Font font; (void)font.openFromFile("/System/Library/Fonts/Supplemental/Arial Unicode.ttf");
+    sf::Font font;
+    (void)font.openFromFile("/System/Library/Fonts/Supplemental/Arial Unicode.ttf");
     sf::Text fpsText(font, "", 16);
     fpsText.setFillColor(sf::Color::White);
     fpsText.setPosition({8.f, 8.f});
@@ -27,8 +32,9 @@ int main() {
 
     while (window.isOpen()) {
         while (auto ev = window.pollEvent()) {
-            if (ev->is<sf::Event::Closed>()) window.close();
-            else if (const auto* key = ev->getIf<sf::Event::KeyPressed>()) {
+            if (ev->is<sf::Event::Closed>()) {
+                window.close();
+            } else if (const auto* key = ev->getIf<sf::Event::KeyPressed>()) {
                 if (key->scancode == sf::Keyboard::Scan::Escape) window.close();
             }
             cam.handleEvent(*ev);
@@ -37,7 +43,7 @@ int main() {
         const float dt = frameClock.restart().asSeconds();
         cam.update(dt);
 
-        // Ensure chunks around the camera’s current view exist (lazy-load)
+        // Lazy-load visible chunks around the camera
         world.ensureVisible(cam.view(), /*inflatePixels=*/TILE_SIZE * 8.f);
 
         // FPS

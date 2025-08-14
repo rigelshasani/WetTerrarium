@@ -1,15 +1,16 @@
 #include "engine/world/World.hpp"
-#include <cmath>
+#include <cassert>
 
 void World::ensureVisible(const sf::View& view, float inflatePixels) {
-    const sf::Vector2f c = view.getCenter();
+    assert(atlas_ && "World requires a valid TileAtlas*");
+
+    const sf::Vector2f c  = view.getCenter();
     const sf::Vector2f sz = view.getSize();
     const float left   = c.x - sz.x * 0.5f - inflatePixels;
     const float right  = c.x + sz.x * 0.5f + inflatePixels;
     const float top    = c.y - sz.y * 0.5f - inflatePixels;
     const float bottom = c.y + sz.y * 0.5f + inflatePixels;
 
-    // Compute chunk rect overlapping the inflated view
     const ChunkCoord cmin = worldPixelsToChunk(left,  top);
     const ChunkCoord cmax = worldPixelsToChunk(right, bottom);
 
@@ -18,17 +19,16 @@ void World::ensureVisible(const sf::View& view, float inflatePixels) {
             ChunkCoord key{cx, cy};
             if (chunks_.find(key) != chunks_.end()) continue;
 
-            // Create and generate
             Entry e{Chunk(key)};
             e.chunk.generate(seed_);
-            e.batch.build(e.chunk);
+            e.batch.build(e.chunk, *atlas_);
             chunks_.emplace(key, std::move(e));
         }
     }
 }
 
 void World::draw(sf::RenderTarget& t, sf::RenderStates s) const {
-    // In a real engine we’d cull here too; for now draw all loaded entries.
+    // Draw all loaded chunks (caller should have ensured visibility)
     for (const auto& kv : chunks_) {
         t.draw(kv.second.batch, s);
     }
