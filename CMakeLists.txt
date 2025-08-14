@@ -24,6 +24,7 @@ add_library(engine_tile
   engine/tile/TileAtlas.hpp
   engine/tile/TileBatch.hpp
   engine/tile/TileBatch.cpp
+  engine/noise/ValueNoise.hpp 
 )
 target_link_libraries(engine_tile PUBLIC SFML::Graphics)
 target_include_directories(engine_tile PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
