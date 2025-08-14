@@ -2,11 +2,19 @@
 #include <SFML/Graphics.hpp>
 #include <algorithm>
 #include <cstdint>
+#include <stdexcept>
 #include "engine/tile/TileTypes.hpp"
 
 class TileAtlas {
 public:
-    explicit TileAtlas(unsigned tileSize = TILE_SIZE) : size_(tileSize) { build(); }
+    explicit TileAtlas(unsigned tileSize = TILE_SIZE) : size_(tileSize) { 
+        if (tileSize == 0) {
+            throw std::invalid_argument("TileAtlas tile size must be greater than 0");
+        }
+        if (!build()) {
+            throw std::runtime_error("Failed to create TileAtlas texture");
+        }
+    }
 
     unsigned tileSize() const { return size_; }
     const sf::Texture& texture() const { return tex_; }
@@ -25,7 +33,7 @@ private:
         return static_cast<std::uint8_t>(std::clamp(v, 0, 255));
     }
 
-    void build() {
+    bool build() {
         const unsigned cols = 4;
         const sf::Vector2u imgSize{cols * size_, size_};
         sf::Image img(imgSize, sf::Color::Transparent);
@@ -53,9 +61,11 @@ private:
         shadeFill(2, sf::Color(121, 85, 58));
         shadeFill(3, sf::Color(110, 110, 110));
 
-        bool ok = tex_.loadFromImage(img);
-        (void)ok;
+        if (!tex_.loadFromImage(img)) {
+            return false;
+        }
         tex_.setRepeated(false);
         tex_.setSmooth(false);
+        return true;
     }
 };
